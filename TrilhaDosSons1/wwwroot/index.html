@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>🎵 Trilha dos Sons</title>
+<!-- SignalR client (substitui socket.io) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d3b1e;--green:#22c55e;--green2:#16a34a;--yellow:#fbbf24;
+  --red:#ef4444;--blue:#3b82f6;--purple:#a855f7;--pink:#ec4899;
+  --orange:#f97316;--card:#fff;--radius:16px;--shadow:0 8px 32px rgba(0,0,0,.35);
+}
+html,body{height:100%;font-family:'Nunito',sans-serif;background:var(--bg);overflow-x:hidden}
+.tela{display:none;min-height:100vh}
+.tela.ativa{display:flex}
+
+#tela-entrada{
+  align-items:center;justify-content:center;flex-direction:column;
+  background:radial-gradient(ellipse 120% 80% at 50% 0%,#166534 0%,#0d3b1e 70%);
+  padding:2rem 1rem;gap:1.5rem;
+}
+.logo{text-align:center}
+.logo-emoji{font-size:80px;display:block;animation:float 3s ease-in-out infinite}
+.logo h1{
+  font-family:'Fredoka One',cursive;font-size:3rem;color:#fff;
+  text-shadow:4px 4px 0 #052e16,-2px -2px 0 #052e16,2px -2px 0 #052e16,-2px 2px 0 #052e16;
+  letter-spacing:2px;line-height:1.1
+}
+.logo p{color:#bbf7d0;margin-top:.25rem;font-size:1rem;font-weight:600}
+.card{background:#fff;border-radius:var(--radius);padding:2rem;width:100%;max-width:420px;box-shadow:var(--shadow)}
+.card h2{font-family:'Fredoka One',cursive;color:var(--green2);font-size:1.5rem;margin-bottom:1.25rem}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem}
+.field label{font-size:13px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.5px}
+.field input{padding:12px 14px;border-radius:10px;border:2.5px solid #e5e7eb;font-size:16px;font-family:inherit;outline:none;transition:border-color .2s;font-weight:700}
+.field input:focus{border-color:var(--green)}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:none;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;transition:transform .1s,filter .15s;text-align:center;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.btn:hover{filter:brightness(1.08)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 5px 0 var(--green2)}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 5px 0 #1d4ed8}
+.btn-yellow{background:var(--yellow);color:#713f12;box-shadow:0 5px 0 #d97706}
+.err{color:var(--red);font-size:13px;font-weight:700;margin-top:6px;display:none}
+#lobby-area{display:none;width:100%;max-width:420px}
+.lobby-card{background:#fff;border-radius:var(--radius);padding:1.5rem 2rem;box-shadow:var(--shadow)}
+.lobby-card h3{font-family:'Fredoka One',cursive;color:var(--blue);font-size:1.2rem;margin-bottom:1rem}
+.lobby-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;max-height:240px;overflow-y:auto}
+.lobby-player{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0fdf4;border-radius:10px;font-weight:700;font-size:14px}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+
+#tela-jogo{flex-direction:column;padding-top:52px}
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;background:#052e16;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:.55rem 1.2rem;box-shadow:0 3px 16px rgba(0,0,0,.5);gap:1rem}
+.hdr-logo{font-family:'Fredoka One',cursive;font-size:1.1rem;white-space:nowrap}
+.hdr-turno{background:rgba(255,255,255,.15);border-radius:30px;padding:4px 14px;font-size:13px;font-weight:700;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-pos{background:var(--yellow);color:#713f12;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:800;white-space:nowrap}
+.game-body{display:flex;flex:1;height:calc(100vh - 52px);overflow:hidden}
+.sidebar{width:180px;flex-shrink:0;background:rgba(0,0,0,.4);padding:1rem .75rem;overflow-y:auto}
+.sidebar-title{color:#86efac;font-size:13px;font-weight:800;text-align:center;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px}
+.scores{display:flex;flex-direction:column;gap:6px}
+.score{background:rgba(255,255,255,.1);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;transition:all .2s}
+.score.vez{background:rgba(251,191,36,.25);box-shadow:0 0 0 2px var(--yellow)}
+.score-name{font-size:12px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-pos{font-size:11px;color:#86efac}
+.main{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:1rem;gap:1rem}
+.board-wrap{background:#0a2e12;border-radius:16px;padding:1rem;box-shadow:inset 0 4px 24px rgba(0,0,0,.5)}
+.board{display:grid;grid-template-columns:repeat(11,1fr);gap:5px}
+.sq{min-height:46px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;font-size:11px;font-weight:800;user-select:none}
+.sq.empty{background:transparent!important}
+.sq-num{font-size:9px;opacity:.7;line-height:1;color:inherit}
+.sq-avs{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;position:absolute;top:-13px;left:0;right:0;z-index:3}
+.mini-av{width:18px;height:18px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.sq:nth-child(6n+1){background:#ef4444;color:#fff}
+.sq:nth-child(6n+2){background:#f97316;color:#fff}
+.sq:nth-child(6n+3){background:#eab308;color:#1a0f00}
+.sq:nth-child(6n+4){background:#22c55e;color:#fff}
+.sq:nth-child(6n+5){background:#3b82f6;color:#fff}
+.sq:nth-child(6n){background:#a855f7;color:#fff}
+.sq.start{background:#fff!important;color:#166534;border:3px solid var(--green);font-size:9px}
+.sq.goal{background:var(--yellow)!important;color:#713f12;border:3px solid #d97706;font-size:9px;animation:glow 1.5s ease-in-out infinite}
+.qcard{background:#fff;border-radius:var(--radius);padding:1.25rem 1.5rem;box-shadow:var(--shadow)}
+.who{display:flex;align-items:center;gap:12px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:2px dashed #e5e7eb}
+.who-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.who-label{font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase}
+.who-name{font-size:1.1rem;font-weight:900;color:#1f2937}
+.audio-box{background:#eff6ff;border:2px solid #bfdbfe;border-radius:12px;padding:1rem;text-align:center;margin-bottom:1.25rem}
+.audio-hint{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:.75rem}
+#audio-q{width:100%;border-radius:8px;margin-bottom:.5rem}
+#btn-replay{background:var(--blue);color:#fff;border:none;border-radius:20px;padding:6px 20px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+#btn-replay:hover{background:#1d4ed8}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
+.opt{padding:13px 10px;border-radius:12px;border:2.5px solid #e5e7eb;background:#f9fafb;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;color:#1f2937;transition:all .15s}
+.opt:hover:not(:disabled){background:#eff6ff;border-color:var(--blue);transform:translateY(-2px)}
+.opt:active:not(:disabled){transform:scale(.97)}
+.opt.hit{background:#dcfce7;border-color:var(--green);color:#166534}
+.opt.miss{background:#fee2e2;border-color:var(--red);color:#991b1b}
+.opt:disabled{cursor:default}
+.fb{padding:12px 16px;border-radius:12px;font-size:15px;font-weight:800;text-align:center;margin-top:.25rem;display:none}
+.fb.ok{background:#dcfce7;color:#166534;border:2px solid var(--green)}
+.fb.ng{background:#fee2e2;color:#991b1b;border:2px solid var(--red)}
+.waiting{text-align:center;padding:2rem 1rem;color:#9ca3af;font-size:15px;font-weight:700;grid-column:1/-1}
+#tela-vitoria{align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse at center,#fde68a 0%,#f59e0b 50%,#d97706 100%)}
+.win-box{text-align:center;z-index:2;animation:popIn .5s cubic-bezier(.34,1.56,.64,1)}
+.trophy{font-size:100px;display:block;animation:float 2s ease-in-out infinite}
+.win-title{font-family:'Fredoka One',cursive;font-size:4rem;color:#fff;text-shadow:4px 4px 0 rgba(0,0,0,.2);margin:.25rem 0}
+.win-name{font-family:'Fredoka One',cursive;font-size:2.5rem;color:#3b1500;margin-bottom:.25rem}
+.win-sub{color:#92400e;font-size:1.1rem;font-weight:700;margin-bottom:2rem}
+#confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.c{position:fixed;top:-20px;animation:fall linear forwards}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px #fbbf24}50%{box-shadow:0 0 24px #f59e0b,0 0 40px #fbbf24}}
+@keyframes popIn{0%{transform:scale(0) rotate(-10deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes fall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- ENTRADA -->
+<div id="tela-entrada" class="tela ativa">
+  <div class="logo">
+    <span class="logo-emoji">🎵</span>
+    <h1>Trilha dos Sons</h1>
+    <p>O jogo dos sons e animais!</p>
+  </div>
+  <div class="card">
+    <h2>👋 Entre no jogo</h2>
+    <div class="field">
+      <label>Seu nome</label>
+      <input id="inp-nome" type="text" placeholder="Como te chamam?" maxlength="18" autocomplete="off"/>
+    </div>
+    <button id="btn-entrar" class="btn btn-green">🎮 Entrar na Sala</button>
+    <p id="err" class="err"></p>
+  </div>
+  <div id="lobby-area">
+    <div class="lobby-card">
+      <h3>👥 Jogadores na sala</h3>
+      <div id="lobby-list" class="lobby-list"></div>
+      <button id="btn-start" class="btn btn-blue">▶ Iniciar Jogo</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOGO -->
+<div id="tela-jogo" class="tela">
+  <header class="hdr">
+    <span class="hdr-logo">🎵 Trilha dos Sons</span>
+    <span id="hdr-turno" class="hdr-turno">Aguardando...</span>
+    <span id="hdr-pos" class="hdr-pos">Casa: 0</span>
+  </header>
+  <div class="game-body">
+    <aside class="sidebar">
+      <div class="sidebar-title">🏆 Placar</div>
+      <div id="scores" class="scores"></div>
+    </aside>
+    <main class="main">
+      <div class="board-wrap"><div id="board" class="board"></div></div>
+      <div class="qcard">
+        <div class="who">
+          <div id="who-av" class="who-av">?</div>
+          <div>
+            <div class="who-label">Vez de</div>
+            <div id="who-name" class="who-name">—</div>
+          </div>
+        </div>
+        <div class="audio-box">
+          <div class="audio-hint">🔊 Ouça o som e escolha a resposta!</div>
+          <audio id="audio-q" controls></audio>
+          <button id="btn-replay">🔁 Ouvir Novamente</button>
+        </div>
+        <div id="opts" class="opts"></div>
+        <div id="fb" class="fb"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- VITÓRIA -->
+<div id="tela-vitoria" class="tela">
+  <div class="win-box">
+    <span class="trophy">🏆</span>
+    <div class="win-title">Parabéns!</div>
+    <div id="win-name" class="win-name"></div>
+    <p class="win-sub">chegou à meta e ganhou o jogo!</p>
+    <button id="btn-restart" class="btn btn-green">🔄 Jogar Novamente</button>
+  </div>
+  <div id="confetti"></div>
+</div>
+
+<script>
+// ── SIGNALR (substitui socket.io) ──
+const connection = new signalR.HubConnectionBuilder()
+  .withUrl("/gameHub")
+  .withAutomaticReconnect()
+  .build();
+
+// ── ESTADO ──
+let meuId, jogadores=[], turnoAtual=0, respondeu=false, META=20;
+const $ = id => document.getElementById(id);
+
+// ── TELAS ──
+function show(id){
+  document.querySelectorAll('.tela').forEach(t=>{t.classList.remove('ativa');t.style.display='none'});
+  const t=$(id); t.style.display='flex'; t.classList.add('ativa');
+}
+
+const ini = n => n.slice(0,2).toUpperCase();
+const me  = ()=> jogadores.find(j=>j.id===meuId);
+
+// ── ENTRADA ──
+$('btn-entrar').addEventListener('click', entrar);
+$('inp-nome').addEventListener('keydown', e=>e.key==='Enter'&&entrar());
+function entrar(){
+  const nome=$('inp-nome').value.trim();
+  if(!nome){showErr('Digite seu nome!');return}
+  $('btn-entrar').disabled=true;
+  connection.invoke('NovoJogador', nome);
+}
+function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',3500)}
+
+$('btn-start').addEventListener('click',   ()=>connection.invoke('IniciarJogo'));
+$('btn-restart').addEventListener('click', ()=>connection.invoke('ReiniciarJogo'));
+$('btn-replay').addEventListener('click',  ()=>$('audio-q').play().catch(()=>{}));
+
+// ── LOBBY ──
+function renderLobby(){
+  $('lobby-list').innerHTML='';
+  jogadores.forEach(j=>{
+    const d=document.createElement('div');d.className='lobby-player';
+    d.innerHTML=`<div class="av" style="background:${j.cor}">${ini(j.nome)}</div><span>${j.nome}</span>`;
+    $('lobby-list').appendChild(d);
+  });
+}
+
+// ── TABULEIRO ──
+function buildBoard(){
+  const board=$('board');board.innerHTML='';
+  const cells=Array(33).fill(null);
+  for(let c=0;c<=10;c++) cells[c]=c;
+  for(let c=0;c<=10;c++) cells[11+c]=11+(10-c);
+  for(let c=0;c<=10;c++){const v=22+c;cells[22+c]=v<=META?v:null}
+  cells.forEach(n=>{
+    const d=document.createElement('div');
+    if(n===null){d.className='sq empty';board.appendChild(d);return}
+    d.className='sq';d.id=`sq-${n}`;
+    if(n===0) d.classList.add('start');
+    if(n===META) d.classList.add('goal');
+    const num=document.createElement('span');num.className='sq-num';
+    num.textContent=n===0?'▶':n===META?'🏁':n;
+    d.appendChild(num);
+    const avs=document.createElement('div');avs.className='sq-avs';avs.id=`avs-${n}`;
+    d.appendChild(avs);
+    board.appendChild(d);
+  });
+}
+
+function renderAvatars(){
+  document.querySelectorAll('.sq-avs').forEach(el=>el.innerHTML='');
+  jogadores.forEach(j=>{
+    const c=$(`avs-${j.pos}`);if(!c)return;
+    const a=document.createElement('div');a.className='mini-av';
+    a.style.background=j.cor;a.title=`${j.nome} — Casa ${j.pos}`;a.textContent=ini(j.nome);
+    if(jogadores[turnoAtual]?.id===j.id){a.style.boxShadow='0 0 0 3px #fbbf24';a.style.zIndex='5'}
+    c.appendChild(a);
+  });
+}
+
+function renderScores(){
+  $('scores').innerHTML='';
+  jogadores.forEach((j,i)=>{
+    const d=document.createElement('div');d.className='score'+(i===turnoAtual?' vez':'');
+    d.innerHTML=`<div class="av" style="background:${j.cor};width:28px;height:28px;font-size:11px">${ini(j.nome)}</div>
+      <div><div class="score-name">${j.nome}</div><div class="score-pos">Casa ${j.pos}</div></div>`;
+    $('scores').appendChild(d);
+  });
+}
+
+// ── PERGUNTA ──
+function showQuestion(dados){
+  const {jogadorDaVez,pergunta}=dados;
+  respondeu=false;
+  $('who-av').style.background=jogadorDaVez.cor;
+  $('who-av').textContent=ini(jogadorDaVez.nome);
+  $('who-name').textContent=jogadorDaVez.nome;
+  $('hdr-turno').textContent=`Vez de: ${jogadorDaVez.nome}`;
+  $('audio-q').src=pergunta.audio;
+  $('audio-q').load();
+  $('audio-q').play().catch(()=>{});
+  $('opts').innerHTML='';
+  $('fb').style.display='none';
+  const euDaVez=jogadorDaVez.id===meuId;
+  if(euDaVez){
+    pergunta.opcoes.forEach((op,i)=>{
+      const b=document.createElement('button');b.className='opt';b.textContent=op;
+      b.addEventListener('click',()=>responder(i));
+      $('opts').appendChild(b);
+    });
+  } else {
+    $('opts').innerHTML=`<div class="waiting">⏳ Aguardando <strong>${jogadorDaVez.nome}</strong> responder...</div>`;
+  }
+}
+
+function responder(idx){
+  if(respondeu)return;respondeu=true;
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  connection.invoke('Resposta', idx);
+}
+
+function showFeedback(dados){
+  const{acertou,respostaCorreta,opcaoEscolhida,jogador,respostaCorretaTexto}=dados;
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    if(i===respostaCorreta)b.classList.add('hit');
+    else if(i===opcaoEscolhida&&!acertou)b.classList.add('miss');
+  });
+  const fb=$('fb');fb.style.display='block';
+  fb.className='fb '+(acertou?'ok':'ng');
+  fb.textContent=acertou
+    ?`🎉 ${jogador.nome} acertou! Avançou para a casa ${jogador.pos}!`
+    :`😅 Errou! Era "${respostaCorretaTexto}". ${jogador.nome} voltou para a casa ${jogador.pos}.`;
+  const eu=me();if(eu)$('hdr-pos').innerHTML=`Casa: <strong>${eu.pos}</strong>`;
+}
+
+// ── VITÓRIA / CONFETTI ──
+function showWin(v){
+  $('win-name').textContent=v.nome;
+  show('tela-vitoria');
+  confetti();
+}
+function confetti(){
+  const ct=$('confetti');ct.innerHTML='';
+  const cores=['#ef4444','#3b82f6','#22c55e','#fbbf24','#a855f7','#f97316','#ec4899'];
+  for(let i=0;i<90;i++){
+    const p=document.createElement('div');p.className='c';
+    p.style.left=Math.random()*100+'vw';
+    p.style.background=cores[Math.floor(Math.random()*cores.length)];
+    p.style.width=(8+Math.random()*12)+'px';
+    p.style.height=(8+Math.random()*12)+'px';
+    p.style.borderRadius=Math.random()>.5?'50%':'3px';
+    p.style.animationDuration=(1.5+Math.random()*3)+'s';
+    p.style.animationDelay=(Math.random()*2)+'s';
+    ct.appendChild(p);
+  }
+}
+
+// ── EVENTOS SIGNALR ──
+connection.on('estadoJogo', d=>{
+  meuId=d.meuId; jogadores=d.jogadores; turnoAtual=d.turnoAtual; META=d.meta||20;
+  $('lobby-area').style.display='block';
+  renderLobby();
+});
+
+connection.on('jogadorEntrou', d=>{
+  jogadores=d.jogadores; renderLobby();
+});
+
+connection.on('erro', m=>{
+  $('btn-entrar').disabled=false; showErr(m);
+});
+
+connection.on('proximoTurno', d=>{
+  jogadores=d.jogadores; turnoAtual=d.turnoAtual; META=d.meta||20;
+  if(!$('tela-jogo').classList.contains('ativa')){show('tela-jogo');buildBoard()}
+  renderAvatars(); renderScores(); showQuestion(d);
+  const eu=me(); if(eu)$('hdr-pos').innerHTML=`Casa: <strong>${eu.pos}</strong>`;
+});
+
+connection.on('resultadoResposta', d=>{
+  jogadores=d.jogadores; showFeedback(d); renderAvatars(); renderScores();
+});
+
+connection.on('vitoria', d=>{
+  jogadores=d.jogadores||jogadores; renderAvatars();
+  setTimeout(()=>showWin(d.vencedor),800);
+});
+
+connection.on('jogadorSaiu', d=>{
+  jogadores=d.jogadores; renderLobby(); renderScores(); renderAvatars();
+});
+
+// ── INICIA CONEXÃO ──
+connection.start().catch(err=>console.error('SignalR erro:', err));
+show('tela-entrada');
+</script>
+</body>
+</html>
