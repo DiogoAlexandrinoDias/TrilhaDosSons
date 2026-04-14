@@ -7,19 +7,19 @@ namespace TrilhaDosSons.Hubs;
 // ============================================================
 public class Jogador
 {
-    public string Id      { get; set; } = "";
-    public string Nome    { get; set; } = "";
-    public int    Pos     { get; set; } = 0;
-    public string Cor     { get; set; } = "";
+    public string Id { get; set; } = "";
+    public string Nome { get; set; } = "";
+    public int Pos { get; set; } = 0;
+    public string Cor { get; set; } = "";
 }
 
 public class Pergunta
 {
-    public string   Audio   { get; set; } = "";
-    public string[] Opcoes  { get; set; } = [];
-    public int      Correta { get; set; }
-    public string   Dica    { get; set; } = "";
-    public int      Idx     { get; set; }
+    public string Audio { get; set; } = "";
+    public string[] Opcoes { get; set; } = [];
+    public int Correta { get; set; }
+    public string Dica { get; set; } = "";
+    public int Idx { get; set; }
 }
 
 // ============================================================
@@ -28,12 +28,12 @@ public class Pergunta
 public class GameHub : Hub
 {
     // ── Estado global (singleton simples) ──
-    private static readonly List<Jogador> Jogadores  = [];
-    private static readonly List<int>     Usadas     = [];
-    private static int     TurnoAtual   = 0;
+    private static readonly List<Jogador> Jogadores = [];
+    private static readonly List<int> Usadas = [];
+    private static int TurnoAtual = 0;
     private static Pergunta? PerguntaAtual = null;
-    private static bool    EmAndamento  = false;
-    private static Jogador? Vencedor    = null;
+    private static bool EmAndamento = false;
+    private static Jogador? Vencedor = null;
 
     private const int META = 20;
 
@@ -45,26 +45,26 @@ public class GameHub : Hub
 
     private static readonly Pergunta[] Perguntas =
     [
-        new(){ Audio="sons/cachorro.mp3", Opcoes=["Miau","Au Au","Muuuu"],         Correta=1, Dica="Animal doméstico" },
-        new(){ Audio="sons/gato.mp3",     Opcoes=["Miau","Au Au","Cocoricó"],      Correta=0, Dica="Animal doméstico" },
-        new(){ Audio="sons/vaca.mp3",     Opcoes=["Beeee","Muuuu","Oink"],         Correta=1, Dica="Animal da fazenda" },
-        new(){ Audio="sons/galo.mp3",     Opcoes=["Cocoricó","Quac quac","Au Au"], Correta=0, Dica="Ave da fazenda" },
-        new(){ Audio="sons/pato.mp3",     Opcoes=["Miau","Cocoricó","Quac quac"],  Correta=2, Dica="Ave aquática" },
-        new(){ Audio="sons/ovelha.mp3",   Opcoes=["Beeee","Muuuu","Oink"],         Correta=0, Dica="Animal de lã" },
-        new(){ Audio="sons/porco.mp3",    Opcoes=["Au Au","Oink","Beeee"],         Correta=1, Dica="Animal da fazenda" },
-        new(){ Audio="sons/sapo.mp3",     Opcoes=["Croá croá","Piar","Zurrar"],    Correta=0, Dica="Anfíbio" },
-        new(){ Audio="sons/passaro.mp3",  Opcoes=["Latir","Piar","Mugir"],         Correta=1, Dica="Ave" },
-        new(){ Audio="sons/cavalo.mp3",   Opcoes=["Zurrar","Mugir","Cacarejar"],   Correta=0, Dica="Animal de montaria" },
-        new(){ Audio="sons/elefante.mp3", Opcoes=["Rosnar","Latir","Barrir"],      Correta=2, Dica="O maior animal terrestre" },
-        new(){ Audio="sons/leao.mp3",     Opcoes=["Rugir","Miar","Piar"],          Correta=0, Dica="Rei da selva" },
-        new(){ Audio="sons/relogio.mp3",  Opcoes=["Din din","Tic tac","Zum zum"],  Correta=1, Dica="Mede o tempo" },
-        new(){ Audio="sons/sino.mp3",     Opcoes=["Tic tac","Zum zum","Din din"],  Correta=2, Dica="Instrumento percussivo" },
-        new(){ Audio="sons/abelha.mp3",   Opcoes=["Tum tum","Zum zum","Piu piu"],  Correta=1, Dica="Inseto que faz mel" },
-        new(){ Audio="sons/trem.mp3",     Opcoes=["Tchuuu","Biiip","Vrumm"],       Correta=0, Dica="Meio de transporte sobre trilhos" },
-        new(){ Audio="sons/piano.mp3",    Opcoes=["Violino","Guitarra","Piano"],   Correta=2, Dica="Instrumento de teclas" },
-        new(){ Audio="sons/flauta.mp3",   Opcoes=["Flauta","Tambor","Trompete"],   Correta=0, Dica="Instrumento de sopro" },
-        new(){ Audio="sons/tambor.mp3",   Opcoes=["Piano","Tambor","Violino"],     Correta=1, Dica="Instrumento de percussão" },
-        new(){ Audio="sons/telefone.mp3", Opcoes=["Campainha","Sirene","Telefone"],Correta=2, Dica="Aparelho de comunicação" },
+        new(){ Audio="sons/cachorro.mp3", Opcoes=["Gato","Cachorro","Vaca"],       Correta=1, Dica="Animal doméstico" },
+        new(){ Audio="sons/gato.mp3",     Opcoes=["Gato","Cachorro","Galo"],       Correta=0, Dica="Animal doméstico" },
+        new(){ Audio="sons/vaca.mp3",     Opcoes=["Ovelha","Vaca","Porco"],        Correta=1, Dica="Animal da fazenda" },
+        new(){ Audio="sons/galo.mp3",     Opcoes=["Galo","Pato","Cachorro"],       Correta=0, Dica="Ave da fazenda" },
+        new(){ Audio="sons/pato.mp3",     Opcoes=["Gato","Galo","Pato"],           Correta=2, Dica="Ave aquática" },
+        new(){ Audio="sons/ovelha.mp3",   Opcoes=["Ovelha","Vaca","Porco"],        Correta=0, Dica="Animal de lã" },
+        new(){ Audio="sons/porco.mp3",    Opcoes=["Cachorro","Porco","Ovelha"],    Correta=1, Dica="Animal da fazenda" },
+        new(){ Audio="sons/sapo.mp3",     Opcoes=["Sapo","Pássaro","Cavalo"],      Correta=0, Dica="Anfíbio" },
+        new(){ Audio="sons/passaro.mp3",  Opcoes=["Cachorro","Pássaro","Vaca"],    Correta=1, Dica="Ave" },
+        new(){ Audio="sons/cavalo.mp3",   Opcoes=["Cavalo","Vaca","Galo"],         Correta=0, Dica="Animal de montaria" },
+        new(){ Audio="sons/elefante.mp3", Opcoes=["Leão","Cavalo","Elefante"],     Correta=2, Dica="O maior animal terrestre" },
+        new(){ Audio="sons/leao.mp3",     Opcoes=["Leão","Gato","Pássaro"],        Correta=0, Dica="Rei da selva" },
+        new(){ Audio="sons/relogio.mp3",  Opcoes=["Sino","Relógio","Abelha"],      Correta=1, Dica="Mede o tempo" },
+        new(){ Audio="sons/sino.mp3",     Opcoes=["Relógio","Abelha","Sino"],      Correta=2, Dica="Instrumento percussivo" },
+        new(){ Audio="sons/abelha.mp3",   Opcoes=["Tambor","Abelha","Pássaro"],    Correta=1, Dica="Inseto que faz mel" },
+        new(){ Audio="sons/trem.mp3",     Opcoes=["Trem","Telefone","Sino"],       Correta=0, Dica="Meio de transporte sobre trilhos" },
+        new(){ Audio="sons/teclado.mp3",  Opcoes=["Flauta","Tambor","Teclado"],    Correta=2, Dica="Instrumento de teclas" },
+        new(){ Audio="sons/flauta.mp3",   Opcoes=["Flauta","Tambor","Teclado"],    Correta=0, Dica="Instrumento de sopro" },
+        new(){ Audio="sons/tambor.mp3",   Opcoes=["Teclado","Tambor","Flauta"],    Correta=1, Dica="Instrumento de percussão" },
+        new(){ Audio="sons/telefone.mp3", Opcoes=["Sino","Relógio","Telefone"],    Correta=2, Dica="Aparelho de comunicação" },
     ];
 
     // ── Helpers ──
@@ -99,22 +99,24 @@ public class GameHub : Hub
     {
         nome = nome.Trim();
         if (string.IsNullOrEmpty(nome)) return;
-        if (EmAndamento)  { await Clients.Caller.SendAsync("erro", "Jogo em andamento, aguarde!"); return; }
+        if (EmAndamento) { await Clients.Caller.SendAsync("erro", "Jogo em andamento, aguarde!"); return; }
         if (Jogadores.Count >= 10) { await Clients.Caller.SendAsync("erro", "Sala cheia (max 10)"); return; }
 
         var j = new Jogador
         {
-            Id   = Context.ConnectionId,
+            Id = Context.ConnectionId,
             Nome = nome.Length > 18 ? nome[..18] : nome,
-            Pos  = 0,
-            Cor  = Cores[Jogadores.Count % Cores.Length]
+            Pos = 0,
+            Cor = Cores[Jogadores.Count % Cores.Length]
         };
         Jogadores.Add(j);
         await Groups.AddToGroupAsync(Context.ConnectionId, "sala");
         await Clients.Caller.SendAsync("estadoJogo", new
         {
-            jogadores = Jogadores, turnoAtual = TurnoAtual,
-            meuId = Context.ConnectionId, meta = META
+            jogadores = Jogadores,
+            turnoAtual = TurnoAtual,
+            meuId = Context.ConnectionId,
+            meta = META
         });
         await Clients.Group("sala").SendAsync("jogadorEntrou", new { jogadores = Jogadores });
     }
@@ -137,17 +139,17 @@ public class GameHub : Hub
 
         await Clients.Group("sala").SendAsync("resultadoResposta", new
         {
-            jogador             = j,
+            jogador = j,
             acertou,
-            jogadores           = Jogadores,
-            respostaCorreta     = PerguntaAtual.Correta,
-            respostaCorretaTexto= PerguntaAtual.Opcoes[PerguntaAtual.Correta],
-            opcaoEscolhida      = opcaoIdx,
+            jogadores = Jogadores,
+            respostaCorreta = PerguntaAtual.Correta,
+            respostaCorretaTexto = PerguntaAtual.Opcoes[PerguntaAtual.Correta],
+            opcaoEscolhida = opcaoIdx,
         });
 
         if (j.Pos >= META)
         {
-            Vencedor    = j;
+            Vencedor = j;
             EmAndamento = false;
             await Task.Delay(800);
             await Clients.Group("sala").SendAsync("vitoria", new { vencedor = j, jogadores = Jogadores });
@@ -162,9 +164,9 @@ public class GameHub : Hub
     public async Task ReiniciarJogo()
     {
         Jogadores.ForEach(j => j.Pos = 0);
-        TurnoAtual  = 0;
+        TurnoAtual = 0;
         Usadas.Clear();
-        Vencedor    = null;
+        Vencedor = null;
         EmAndamento = true;
         await ProximoTurno();
     }
@@ -175,11 +177,11 @@ public class GameHub : Hub
         PerguntaAtual = SortearPergunta();
         await Clients.Group("sala").SendAsync("proximoTurno", new
         {
-            turnoAtual    = TurnoAtual,
-            jogadorDaVez  = Jogadores[TurnoAtual],
-            pergunta      = PerguntaAtual,
-            jogadores     = Jogadores,
-            meta          = META,
+            turnoAtual = TurnoAtual,
+            jogadorDaVez = Jogadores[TurnoAtual],
+            pergunta = PerguntaAtual,
+            jogadores = Jogadores,
+            meta = META,
         });
     }
 }
